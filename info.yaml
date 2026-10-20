@@ -1,47 +1,45 @@
 # Tiny Tapeout project information
 project:
-  title:        ""      # Project title
-  author:       ""      # Your name
-  discord:      ""      # Your discord username, for communication and automatically assigning you a Tapeout role (optional)
-  description:  ""      # One line description of what your project does
-  language:     "Verilog" # other examples include SystemVerilog, Amaranth, VHDL, etc
-  clock_hz:     0       # Clock frequency in Hz (or 0 if not applicable)
+  title:        "Tiny NPU"
+  author:       "Marius LEPERE"
+  discord:      "carjaguar"
+  description:  "Tiny NPU to find if the user put an horizontal or a vertical line (hello world of AI)"
+  language:     "Verilog"
+  clock_hz:     0       # 0 car le design est purement combinatoire (pas d'horloge)
 
   # How many tiles your design occupies? A single tile is about 167x108 uM.
-  tiles: "1x1"          # Valid values: 1x1, 1x2, 2x2, 3x2, 4x2, 6x2 or 8x2
+  tiles: "1x1"
 
   # Your top module name must start with "tt_um_". Make it unique by including your github username:
-  top_module:  "tt_um_example"
+  top_module:  "tt_um_npu_MariusL00"
 
   # List your project's source files here.
-  # Source files must be in ./src and you must list each source file separately, one per line.
-  # Don't forget to also update `PROJECT_SOURCES` in test/Makefile.
   source_files:
     - "project.v"
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:
-  # Inputs
-  ui[0]: ""
-  ui[1]: ""
-  ui[2]: ""
-  ui[3]: ""
+  # Inputs (Les 4 switches pour dessiner le motif)
+  ui[0]: "Pixel 0 (Bas-Droite)"
+  ui[1]: "Pixel 1 (Haut-Droite)"
+  ui[2]: "Pixel 2 (Bas-Gauche)"
+  ui[3]: "Pixel 3 (Haut-Gauche)"
   ui[4]: ""
   ui[5]: ""
   ui[6]: ""
   ui[7]: ""
 
-  # Outputs
-  uo[0]: ""
-  uo[1]: ""
-  uo[2]: ""
-  uo[3]: ""
-  uo[4]: ""
-  uo[5]: ""
-  uo[6]: ""
+  # Outputs (La prédiction et les scores internes extraits pour l'écran OLED)
+  uo[0]: "Prediction (1=Classe A Vertical, 0=Classe B Horizontal)"
+  uo[1]: "Max Vertical Score [Bit 0]"
+  uo[2]: "Max Vertical Score [Bit 1]"
+  uo[3]: "Max Vertical Score [Bit 2 / Signe]"
+  uo[4]: "Max Horizontal Score [Bit 0]"
+  uo[5]: "Max Horizontal Score [Bit 1]"
+  uo[6]: "Max Horizontal Score [Bit 2 / Signe]"
   uo[7]: ""
 
-  # Bidirectional pins
+  # Bidirectional pins (Non utilisées pour cette première version sans UART)
   uio[0]: ""
   uio[1]: ""
   uio[2]: ""
