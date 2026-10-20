@@ -13,8 +13,8 @@ module tb;
     wire [7:0] uio_out;
     wire [7:0] uio_oe;
 
-    // Instanciation du module NPU (DUT)
-    tt_um_npu_MariusL00 uut(
+    // Instanciation du NPU 3x3
+    tt_um_npu_MariusL00 uut (
 `ifdef GL_TEST
         .VPWR(1'b1),
         .VGND(1'b0),

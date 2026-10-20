@@ -1,16 +1,16 @@
 # Tiny Tapeout project information
 project:
-  title:        "Tiny NPU"
+  title:        "TinyNPU 3x3"
   author:       "Marius LEPERE"
   discord:      "carjaguar"
-  description:  "Tiny NPU to find if the user put an horizontal or a vertical line (hello world of AI)"
+  description:  "Explainable 3x3 hardware NPU with spatial invariance (Max Pooling) to classify lines and export internal scores."
   language:     "Verilog"
-  clock_hz:     0       # 0 car le design est purement combinatoire (pas d'horloge)
+  clock_hz:     0       # Design purement combinatoire
 
-  # How many tiles your design occupies? A single tile is about 167x108 uM.
+  # How many tiles your design occupies?
   tiles: "1x1"
 
-  # Your top module name must start with "tt_um_". Make it unique by including your github username:
+  # Your top module name must start with "tt_um_":
   top_module:  "tt_um_npu_MariusL00"
 
   # List your project's source files here.
@@ -19,30 +19,30 @@ project:
 
 # The pinout of your project. Leave unused pins blank. DO NOT delete or add any pins.
 pinout:
-  # Inputs (Les 4 switches pour dessiner le motif)
-  ui[0]: "Pixel 0 (Bas-Droite)"
-  ui[1]: "Pixel 1 (Haut-Droite)"
-  ui[2]: "Pixel 2 (Bas-Gauche)"
-  ui[3]: "Pixel 3 (Haut-Gauche)"
-  ui[4]: ""
-  ui[5]: ""
-  ui[6]: ""
-  ui[7]: ""
+  # Inputs : Les 8 premiers pixels de la matrice 3x3
+  ui[0]: "Pixel 0"
+  ui[1]: "Pixel 1"
+  ui[2]: "Pixel 2"
+  ui[3]: "Pixel 3"
+  ui[4]: "Pixel 4"
+  ui[5]: "Pixel 5"
+  ui[6]: "Pixel 6"
+  ui[7]: "Pixel 7"
 
-  # Outputs (La prédiction et les scores internes extraits pour l'écran OLED)
-  uo[0]: "Prediction (1=Classe A Vertical, 0=Classe B Horizontal)"
-  uo[1]: "Max Vertical Score [Bit 0]"
-  uo[2]: "Max Vertical Score [Bit 1]"
-  uo[3]: "Max Vertical Score [Bit 2 / Signe]"
-  uo[4]: "Max Horizontal Score [Bit 0]"
-  uo[5]: "Max Horizontal Score [Bit 1]"
-  uo[6]: "Max Horizontal Score [Bit 2 / Signe]"
-  uo[7]: ""
+  # Outputs : Prédiction (0-4) et le Score sélectionné (5 bits signés)
+  uo[0]: "Prediction [Bit 0]"
+  uo[1]: "Prediction [Bit 1]"
+  uo[2]: "Prediction [Bit 2]"
+  uo[3]: "Selected Score [Bit 0 / LSB]"
+  uo[4]: "Selected Score [Bit 1]"
+  uo[5]: "Selected Score [Bit 2]"
+  uo[6]: "Selected Score [Bit 3]"
+  uo[7]: "Selected Score [Bit 4 / Signe]"
 
-  # Bidirectional pins (Non utilisées pour cette première version sans UART)
-  uio[0]: ""
-  uio[1]: ""
-  uio[2]: ""
+  # Bidirectional pins : Utilisées ici comme ENTRÉES
+  uio[0]: "Pixel 8 (Le 9ème pixel de la matrice)"
+  uio[1]: "MUX Select [Bit 0] (00=H, 01=V, 10=D1, 11=D2)"
+  uio[2]: "MUX Select [Bit 1]"
   uio[3]: ""
   uio[4]: ""
   uio[5]: ""
