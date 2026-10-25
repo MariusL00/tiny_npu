@@ -12,10 +12,10 @@ async def test_npu_educatif(dut):
     dut.ui_in.value = 0
     dut.uio_in.value = 0
     
-    # Sortie du reset
-    await Timer(10, unit="ns")
+    # Sortie du reset - Remis en 'units' pour la compatibilité GitHub Actions
+    await Timer(10, units="ns")
     dut.rst_n.value = 1
-    await Timer(10, unit="ns")
+    await Timer(10, units="ns")
 
     dut._log.info("Démarrage des tests du NPU Éducatif...")
 
@@ -38,7 +38,7 @@ async def test_npu_educatif(dut):
         dut.uio_in.value = uio_in_val
         
         # Attendre le délai de propagation combinatoire
-        await Timer(10, unit="ns")
+        await Timer(10, units="ns")
         
         # --- DÉCODAGE DE LA SORTIE (Comme le fera le MCU en C++) ---
         # On lit la valeur entière des 8 broches (de 0 à 255)
@@ -81,8 +81,6 @@ async def test_npu_educatif(dut):
     await run_test("Bruit (Plein)",            [1,1,1, 1,1,1, 1,1,1], expected_id=0, expected_score=-3)
     
     # Si on allume la colonne du milieu, ce n'est pas la colonne de gauche attendue. 
-    # Bon pixels pour "Gauche" : 0. Mauvais pixels : 3. Score = -3.
-    # Mais le Max_pooling va trouver un meilleur score ailleurs (ex: score_h = -1). Max = -1.
     await run_test("Rejet Ligne Milieu",       [0,1,0, 0,1,0, 0,1,0], expected_id=0, expected_score=-1)
 
-    dut._log.info("🎉 Tous les tests Éducatifs sont passés avec succès ! La logique RTL et le décodage score/ID fonctionnent.")
+    dut._log.info("🎉 Tous les tests Éducatifs sont passés avec succès !")
