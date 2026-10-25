@@ -22,19 +22,25 @@ module tb ();
     wire [7:0] uio_out;
     wire [7:0] uio_oe;
 
+    // ==========================================
+    // CORRECTION : Déclaration des fils d'alimentation
+    // ==========================================
+    wire VPWR = 1'b1;
+    wire VGND = 1'b0;
+
     // Instanciation de votre circuit
     tt_um_npu_MariusL00 user_project (
-    `ifdef GL_TEST
-            .VPWR(1'b1),
-            .VGND(1'b0),
-    `endif
-            .ui_in  (ui_in),
-            .uo_out (uo_out),
-            .uio_in (uio_in),
-            .uio_out(uio_out),
-            .uio_oe (uio_oe),
-            .ena    (ena),
-            .clk    (clk),
-            .rst_n  (rst_n)
-        );
+`ifdef USE_POWER_PINS
+        .VPWR(VPWR),  // Branchement via le fil
+        .VGND(VGND),  // Branchement via le fil
+`endif
+        .ui_in  (ui_in),
+        .uo_out (uo_out),
+        .uio_in (uio_in),
+        .uio_out(uio_out),
+        .uio_oe (uio_oe),
+        .ena    (ena),
+        .clk    (clk),
+        .rst_n  (rst_n)
+    );
 endmodule
