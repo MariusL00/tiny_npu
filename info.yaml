@@ -1,9 +1,9 @@
 # Tiny Tapeout project information
 project:
-  title:        "TinyNPU 3x3"
+  title:        "TinyNPU 3x3 - Educational"
   author:       "Marius LEPERE"
   discord:      "carjaguar"
-  description:  "Explainable 3x3 hardware NPU with spatial invariance (Max Pooling) to classify lines and export internal scores."
+  description:  "Explainable 3x3 hardware NPU exposing internal MAC scores for educational purposes."
   language:     "Verilog"
   clock_hz:     0       # Design purement combinatoire
 
@@ -29,20 +29,20 @@ pinout:
   ui[6]: "Pixel 6"
   ui[7]: "Pixel 7"
 
-  # Outputs : Prédiction (0-4) et le Score sélectionné (5 bits signés)
-  uo[0]: "Prediction [Bit 0]"
-  uo[1]: "Prediction [Bit 1]"
-  uo[2]: "Prediction [Bit 2]"
-  uo[3]: "Selected Score [Bit 0 / LSB]"
-  uo[4]: "Selected Score [Bit 1]"
-  uo[5]: "Selected Score [Bit 2]"
-  uo[6]: "Selected Score [Bit 3]"
-  uo[7]: "Selected Score [Bit 4 / Signe]"
+  # Outputs : Division du bus pour la télémétrie éducative (3 bits ID + 5 bits Score)
+  uo[0]: "Prediction ID [Bit 0 / LSB]"
+  uo[1]: "Prediction ID [Bit 1]"
+  uo[2]: "Prediction ID [Bit 2 / MSB]"
+  uo[3]: "Max MAC Score [Bit 0 / LSB]"
+  uo[4]: "Max MAC Score [Bit 1]"
+  uo[5]: "Max MAC Score [Bit 2]"
+  uo[6]: "Max MAC Score [Bit 3]"
+  uo[7]: "Max MAC Score [Bit 4 / Signe]"
 
   # Bidirectional pins : Utilisées ici comme ENTRÉES
   uio[0]: "Pixel 8 (Le 9ème pixel de la matrice)"
-  uio[1]: "MUX Select [Bit 0] (00=H, 01=V, 10=D1, 11=D2)"
-  uio[2]: "MUX Select [Bit 1]"
+  uio[1]: ""
+  uio[2]: ""
   uio[3]: ""
   uio[4]: ""
   uio[5]: ""

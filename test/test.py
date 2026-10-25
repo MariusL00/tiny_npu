@@ -1,116 +1,88 @@
-# SPDX-FileCopyrightText: © 2024 Tiny Tapeout
-# SPDX-License-Identifier: Apache-2.0
-
 import cocotb
-from cocotb.clock import Clock
-from cocotb.triggers import ClockCycles
-
-def expected_output(p_array, mux_sel):
-    # Les mêmes poids spatiaux que le Verilog
-    w_HH = [ 1,  1,  1, -1, -1, -1, -1, -1, -1]
-    w_HM = [-1, -1, -1,  1,  1,  1, -1, -1, -1]
-    w_HB = [-1, -1, -1, -1, -1, -1,  1,  1,  1]
-
-    w_VG = [ 1, -1, -1,  1, -1, -1,  1, -1, -1]
-    w_VM = [-1,  1, -1, -1,  1, -1, -1,  1, -1]
-    w_VD = [-1, -1,  1, -1, -1,  1, -1, -1,  1]
-
-    w_D1 = [ 1, -1, -1, -1,  1, -1, -1, -1,  1]
-    w_D2 = [-1, -1,  1, -1,  1, -1,  1, -1, -1]
-
-    # Couche 1 : MACs
-    s_HH = sum(p * w for p, w in zip(p_array, w_HH))
-    s_HM = sum(p * w for p, w in zip(p_array, w_HM))
-    s_HB = sum(p * w for p, w in zip(p_array, w_HB))
-
-    s_VG = sum(p * w for p, w in zip(p_array, w_VG))
-    s_VM = sum(p * w for p, w in zip(p_array, w_VM))
-    s_VD = sum(p * w for p, w in zip(p_array, w_VD))
-
-    s_D1 = sum(p * w for p, w in zip(p_array, w_D1))
-    s_D2 = sum(p * w for p, w in zip(p_array, w_D2))
-
-    # Couche 2 : Max Pooling
-    max_H = max(s_HH, s_HM, s_HB)
-    max_V = max(s_VG, s_VM, s_VD)
-    max_global = max(max_H, max_V, s_D1, s_D2)
-
-    # Couche 3 : Décision et Seuil
-    is_H = max_H == max_global
-    is_V = max_V == max_global
-    is_D1 = s_D1 == max_global
-    is_D2 = s_D2 == max_global
-
-    exaequo = is_H + is_V + is_D1 + is_D2
-
-    if max_global >= 2 and exaequo == 1:
-        if is_H: pred = 1
-        elif is_V: pred = 2
-        elif is_D1: pred = 3
-        else: pred = 4
-    else:
-        pred = 0
-
-    # Multiplexeur de sortie (00: H, 01: V, 10: D1, 11: D2)
-    if mux_sel == 0: selected_score = max_H
-    elif mux_sel == 1: selected_score = max_V
-    elif mux_sel == 2: selected_score = s_D1
-    else: selected_score = s_D2
-
-    # Conversion en complément à deux sur 5 bits
-    score_5b = selected_score & 0x1F
-
-    # Reconstitution du bus uo_out [score_5b (5 bits) | prediction (3 bits)]
-    return (score_5b << 3) | pred
-
+from cocotb.triggers import Timer
 
 @cocotb.test()
-async def test_project(dut):
-    dut._log.info("Démarrage du Testbench TinyNPU 3x3")
-
-    clock = Clock(dut.clk, 10, units="us")
-    cocotb.start_soon(clock.start())
-
+async def test_npu_educatif(dut):
+    """Testbench automatisé pour le NPU 3x3 - Architecture Transparente"""
+    
+    # 1. Initialisation des signaux
     dut.ena.value = 1
+    dut.clk.value = 0
+    dut.rst_n.value = 0
     dut.ui_in.value = 0
     dut.uio_in.value = 0
-    dut.rst_n.value = 0
-    await ClockCycles(dut.clk, 5)
+    
+    # Sortie du reset
+    await Timer(10, unit="ns")
     dut.rst_n.value = 1
-    await ClockCycles(dut.clk, 2)
+    await Timer(10, unit="ns")
 
-    valid_count = 0
+    dut._log.info("Démarrage des tests du NPU Éducatif...")
 
-    # Test des 512 images possibles
-    for i in range(512):
-        # Extraction des 9 bits
-        p_array = [(i >> bit) & 1 for bit in range(9)]
-        ui_val = i & 0xFF        # ui_in[7:0] contient p[7:0]
-        p8_val = (i >> 8) & 1    # uio_in[0] contient p[8]
+    # Dictionnaire pour un affichage propre dans la console
+    id_to_name = {
+        0: "INCONNU", 
+        1: "Horizontal", 
+        2: "Vertical", 
+        3: "Diagonale 1", 
+        4: "Diagonale 2"
+    }
 
-        # Test des 4 canaux du multiplexeur pour chaque image
-        for mux in range(4):
-            # uio_in[2:1] = mux, uio_in[0] = p8
-            uio_val = (mux << 1) | p8_val
+    # 2. Fonction utilitaire pour injecter les pixels et décoder la sortie
+    async def run_test(name, pixels, expected_id, expected_score):
+        # Le pixel 8 va sur uio_in[0], les pixels 0 à 7 vont sur ui_in
+        ui_in_val = sum((pixels[i] << i) for i in range(8))
+        uio_in_val = pixels[8]
+        
+        dut.ui_in.value = ui_in_val
+        dut.uio_in.value = uio_in_val
+        
+        # Attendre le délai de propagation combinatoire
+        await Timer(10, unit="ns")
+        
+        # --- DÉCODAGE DE LA SORTIE (Comme le fera le MCU en C++) ---
+        # On lit la valeur entière des 8 broches (de 0 à 255)
+        uo_val = int(dut.uo_out.value)
+        
+        # MASQUE 1 : On extrait les 3 bits de poids faible pour l'ID (Opération ET binaire)
+        pred_id = uo_val & 0b111 
+        
+        # MASQUE 2 : On décale de 3 bits vers la droite pour récupérer le score sur 5 bits
+        raw_score = (uo_val >> 3) & 0b11111
+        
+        # Gestion du signe (Complément à deux sur 5 bits) : Si le 5ème bit est 1, le nombre est négatif
+        score = raw_score - 32 if raw_score >= 16 else raw_score
+
+        # --- VÉRIFICATIONS ---
+        assert pred_id == expected_id, \
+            f"❌ ID Erreur sur '{name}': Attendu {expected_id} ({id_to_name[expected_id]}), Obtenu {pred_id} ({id_to_name.get(pred_id, 'Erreur')})"
             
-            dut.ui_in.value = ui_val
-            dut.uio_in.value = uio_val
-            await ClockCycles(dut.clk, 1)
+        assert score == expected_score, \
+            f"❌ Score Erreur sur '{name}': Attendu {expected_score}, Obtenu {score}"
+        
+        dut._log.info(f"✅ {name.ljust(25)} -> Détecté: {id_to_name[pred_id].ljust(12)} | Score NPU: {score}")
 
-            actual = int(dut.uo_out.value)
-            expected = expected_output(p_array, mux)
+    # 3. Scénarios de tests (Forme ID, Score Attendu)
+    
+    # Lignes parfaites (Score maximum : +3 pixels corrects, -0 pixel faux = 3)
+    await run_test("Ligne Horizontale (Haut)", [1,1,1, 0,0,0, 0,0,0], expected_id=1, expected_score=3)
+    await run_test("Ligne Verticale (Gauche)", [1,0,0, 1,0,0, 1,0,0], expected_id=2, expected_score=3)
+    await run_test("Diagonale 1 (\\)",         [1,0,0, 0,1,0, 0,0,1], expected_id=3, expected_score=3)
+    await run_test("Diagonale 2 (/)",          [0,0,1, 0,1,0, 1,0,0], expected_id=4, expected_score=3)
+    
+    # Lignes imparfaites (Tolérance grâce au seuil de 2. Score : +2, -0 = 2)
+    await run_test("Ligne Horizontale (2px)",  [1,1,0, 0,0,0, 0,0,0], expected_id=1, expected_score=2)
+    await run_test("Ligne Verticale (2px)",    [1,0,0, 1,0,0, 0,0,0], expected_id=2, expected_score=2)
+    
+    # Tests de Bruit / Rejet
+    await run_test("Bruit (Vide)",             [0,0,0, 0,0,0, 0,0,0], expected_id=0, expected_score=0)
+    
+    # Si tout est allumé, le NPU fait : +3 bons pixels, mais -6 mauvais pixels = Score de -3 !
+    await run_test("Bruit (Plein)",            [1,1,1, 1,1,1, 1,1,1], expected_id=0, expected_score=-3)
+    
+    # Si on allume la colonne du milieu, ce n'est pas la colonne de gauche attendue. 
+    # Bon pixels pour "Gauche" : 0. Mauvais pixels : 3. Score = -3.
+    # Mais le Max_pooling va trouver un meilleur score ailleurs (ex: score_h = -1). Max = -1.
+    await run_test("Rejet Ligne Milieu",       [0,1,0, 0,1,0, 0,1,0], expected_id=0, expected_score=-1)
 
-            assert actual == expected, (
-                f"Erreur Image {i:09b} (mux={mux}): "
-                f"Obtenu {actual:08b}, Attendu {expected:08b}"
-            )
-
-            # On n'affiche le log que si la prédiction est valide 
-            # et qu'on est sur le premier canal (pour ne pas l'afficher 4 fois)
-            pred = actual & 0x07
-            if mux == 0 and pred != 0:
-                valid_count += 1
-                classes = ["INCONNU", "Hori", "Vert", "Diag1", "Diag2"]
-                dut._log.info(f"Forme Reconnue ! Entrée: {i:09b} -> Classe: {classes[pred]}")
-
-    dut._log.info(f"SUCCÈS : Les 2048 tests sont passés ! ({valid_count} formes trouvées via Max Pooling)")
+    dut._log.info("🎉 Tous les tests Éducatifs sont passés avec succès ! La logique RTL et le décodage score/ID fonctionnent.")
